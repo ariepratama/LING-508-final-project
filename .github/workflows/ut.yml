@@ -5,6 +5,9 @@ jobs:
   run-ut:
     runs-on: ubuntu-latest
     steps:
+      - run: echo "current workdir is $(pwd)"
+      - name: Check out repository code
+        uses: actions/checkout@v3
       - run: echo "initiating venv..."
       - name: source venv
         run: source venv/Scripts/activate
