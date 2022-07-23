@@ -1,0 +1,14 @@
+name: Github action run unit tests
+on:
+  - push
+jobs:
+  run-ut:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "initiating venv..."
+      - name: source venv
+        run: source venv/Scripts/activate
+      - run: echo "running unit tests..."
+      - name: run pytest
+        run: pytest
+      - run: echo "finished running unit tests! 🎉🎉🎉🎉"
