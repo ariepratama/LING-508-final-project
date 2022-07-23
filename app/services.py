@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Text, List, Tuple
 
 from models import Document, RawDocument
-from repositories import WebDocumentRepositoryImpl, MysqlDocumentRepositoryImpl
+from repositories import WebDocumentRepositoryImpl, SQLDocumentRepositoryImpl
 
 
 class ScrapperService(ABC):
@@ -33,7 +33,7 @@ class ScrapyScrapperService(ScrapperService):
 
     def __init__(self):
         self.web_document_repository = WebDocumentRepositoryImpl()
-        self.db_document_repository = MysqlDocumentRepositoryImpl()
+        self.db_document_repository = SQLDocumentRepositoryImpl()
 
     def extract(self, date: datetime) -> List[RawDocument]:
         pass
