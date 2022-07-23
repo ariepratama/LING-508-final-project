@@ -7,7 +7,7 @@ from app.repositories import SQLDocumentRepositoryImpl
 
 
 class SQLLiteDocumentRepositoryImplTest(unittest.TestCase):
-    repo = SQLDocumentRepositoryImpl.instance(engine="sqlite", host="", database="ling_508")
+    repo = SQLDocumentRepositoryImpl.instance(engine="sqlite", host="", database="ling_508.db")
 
     def test_retrieve(self):
         text_1 = "document 1"
