@@ -4,14 +4,17 @@ on:
 jobs:
   run-ut:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.7"]
     steps:
       - run: echo "current workdir is $(pwd)"
       - name: Check out repository code
         uses: actions/checkout@v3
-      - run: echo "initiating venv..."
-      - name: source venv
-        run: source venv/Scripts/activate
-      - run: echo "running unit tests..."
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: run pytest
         run: pytest
       - run: echo "finished running unit tests! 🎉🎉🎉🎉"
