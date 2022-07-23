@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Text, List, Tuple
 
-from models import Document, RawDocument
-from repositories import WebDocumentRepositoryImpl, SQLDocumentRepositoryImpl
+from app.models import Document, RawDocument
+from app.repositories import WebDocumentRepositoryImpl, SQLDocumentRepositoryImpl
+from bs4 import BeautifulSoup
 
 
 class ScrapperService(ABC):
@@ -39,10 +40,11 @@ class ScrapyScrapperService(ScrapperService):
         pass
 
     def clean_html(self, raw_document: RawDocument) -> Document:
-        pass
+        soup = BeautifulSoup(raw_document.text, "html.parser")
+        return soup.getText()
 
     def store_document(self, document: Document) -> None:
-        pass
+        self.db_document_repository.store(document.date, document)
 
 
 class NERExtractionService(ABC):

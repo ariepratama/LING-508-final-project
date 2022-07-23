@@ -36,8 +36,8 @@ class SQLDocumentRepositoryImpl(DocumentRepository):
 
     @staticmethod
     def instance(host: str = "localhost", database: str = "ling_508", engine: str = "mysql"):
-        """ initiate and return singleton instance of MysqlRepository. Prefer to use this static method
-        compared to initiating by yourselves. By default, will use mysql
+        """ initiate and return singleton instance of SQLDocumentRepositoryImpl. Prefer to use this static method
+        compared to initiating by yourselves.
 
         :param engine:
         :param host:
@@ -60,6 +60,11 @@ class SQLDocumentRepositoryImpl(DocumentRepository):
                       Column("text", String()))
 
     def db_init(self, connection_str):
+        """ initiate db connection. This method must be called after constructing this object
+
+        :param connection_str:
+        :return:
+        """
         self.db_engine = create_engine(connection_str)
         self.metadata.create_all(self.db_engine)
         self.db_conn = self.db_engine.connect()

@@ -29,4 +29,5 @@ class RawDocument(Document):
     """
 
     def __init__(self, date: datetime, text: Text):
-        super.__init__(date, text)
+        super(RawDocument, self).__init__(date, text)
+        # super(RawDocument).__init__(date, text)
