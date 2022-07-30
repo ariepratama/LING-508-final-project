@@ -3,7 +3,15 @@ import unittest
 from datetime import datetime
 
 from app.models import Document
-from app.repositories import SQLDocumentRepositoryImpl
+from app.repositories import SQLDocumentRepositoryImpl, WebDocumentRepositoryImpl
+
+
+class WebDocumentRepositoryImplTest(unittest.TestCase):
+    repo = WebDocumentRepositoryImpl()
+
+    def test_retrieve(self):
+        raw_documents = self.repo.retrieve(date=datetime.now())
+        self.assertEqual(self.repo.limit, len(raw_documents))
 
 
 class SQLLiteDocumentRepositoryImplTest(unittest.TestCase):

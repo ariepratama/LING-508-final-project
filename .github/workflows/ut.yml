@@ -4,6 +4,15 @@ on:
 jobs:
   run-ut:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:latest
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ling_508
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=10s --health-retries=10
     strategy:
       matrix:
         python-version: [ "3.7"]
@@ -20,6 +29,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: run db migration
+        run: alembic upgrade head
       - name: run pytest
         run: pytest
       - run: echo "finished running unit tests! 🎉🎉🎉🎉"
