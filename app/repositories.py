@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import List
 
-from sqlalchemy import MetaData, Table, Column, Integer, DateTime, String
+from datasets import load_dataset
+from sqlalchemy import MetaData, Table, Column, Integer, DateTime, Text
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 
@@ -23,9 +24,18 @@ class DocumentRepository(ABC):
 class WebDocumentRepositoryImpl(DocumentRepository):
     """Retrieve document from the web. the text itself may contain html tags
     """
+    # limiting the news dataset only for demonstration purpose
+    limit = 1000
 
     def retrieve(self, date: datetime) -> List[RawDocument]:
-        pass
+        # chose validation dataset so that it will be lighter to be loaded
+        multi_news_dataset = load_dataset("multi_news", split="validation")
+        raw_documents = []
+
+        for text in multi_news_dataset["document"][:self.limit]:
+            raw_documents.append(RawDocument(date=date, text=text))
+
+        return raw_documents
 
     def store(self, date: datetime, doc: Document) -> None:
         raise Exception("Cannot do store using WebDocumentRepositoryImpl")
@@ -35,7 +45,8 @@ class SQLDocumentRepositoryImpl(DocumentRepository):
     INSTANCES = {}
 
     @staticmethod
-    def instance(host: str = "localhost", database: str = "ling_508", engine: str = "mysql"):
+    def instance(host: str = "localhost", database: str = "ling_508", engine: str = "mysql",
+                 user: str = None, password: str = None):
         """ initiate and return singleton instance of SQLDocumentRepositoryImpl. Prefer to use this static method
         compared to initiating by yourselves.
 
@@ -48,6 +59,8 @@ class SQLDocumentRepositoryImpl(DocumentRepository):
             return SQLDocumentRepositoryImpl.INSTANCES[engine]
         repository = SQLDocumentRepositoryImpl()
         conn_str = f"{engine}://{host}/{database}"
+        if user is not None and password is not None:
+            conn_str = f"{engine}://{user}:{password}@{host}/{database}"
         repository.db_init(conn_str)
         return repository
 
@@ -57,7 +70,7 @@ class SQLDocumentRepositoryImpl(DocumentRepository):
     documents = Table("documents", metadata,
                       Column("id", Integer(), primary_key=True, autoincrement="ignore_fk"),
                       Column("date", DateTime(), index=True),
-                      Column("text", String()))
+                      Column("text", Text()))
 
     def db_init(self, connection_str):
         """ initiate db connection. This method must be called after constructing this object
