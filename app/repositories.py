@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 from typing import List
 
 from datasets import load_dataset
-from sqlalchemy import MetaData, Table, Column, Integer, DateTime, Text
+from sqlalchemy import MetaData, Table, Column, Integer, DateTime, Text, ForeignKey, String
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Document, RawDocument
+from app.models import Document, RawDocument, NERSpan
 
 
 class DocumentRepository(ABC):
@@ -132,3 +132,42 @@ class SQLDocumentRepositoryImpl(DocumentRepository):
         except Exception as e:
             transaction.rollback()
             logging.warning(f"failed to truncate documents table, rolling back {e}")
+
+
+class NERSpanRepository(ABC):
+    @abstractmethod
+    def find_by_ner_category(self, ner_category: str) -> List[NERSpan]:
+        pass
+
+    @abstractmethod
+    def store(self, ner_span: NERSpan) -> None:
+        pass
+
+
+class SQLNERSpanRepository(NERSpanRepository):
+    db_engine = None
+    db_conn = None
+    metadata = MetaData()
+    document_named_entities = Table("document_named_entities", metadata,
+                      Column("id", Integer(), primary_key=True, autoincrement="ignore_fk"),
+                      Column("document_id", Integer(), ForeignKey("documents.id"), index=True),
+                      Column("start_span", Integer()),
+                      Column("end_span", Integer()),
+                      Column("ner_tag", String(100)),
+                      Column("ner_category", String(100), index=True))
+
+    def find_by_ner_category(self, ner_category: str) -> List[NERSpan]:
+        query = self.document_named_entities.select().where(
+            self.document_named_entities.c.ner_category == ner_category
+        )
+
+        results = self.db_conn.execute(query).fetchall()
+        results = [
+            NERSpan(**row)
+            for row in results
+        ]
+
+        return results
+
+    def store(self, ner_span: NERSpan) -> None:
+        pass

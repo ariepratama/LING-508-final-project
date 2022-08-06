@@ -30,4 +30,13 @@ class RawDocument(Document):
 
     def __init__(self, date: datetime, text: Text):
         super(RawDocument, self).__init__(date, text)
-        # super(RawDocument).__init__(date, text)
+
+
+class NERSpan:
+    def __init__(self, id: int, start_span: int, end_span: int, document_id: int, ner_tag: str, ner_category: str):
+        self.id = id
+        self.start_span = start_span
+        self.end_span = end_span
+        self.document_id = document_id
+        self.ner_tag = ner_tag
+        self.ner_category = ner_category
