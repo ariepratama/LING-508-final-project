@@ -5,6 +5,7 @@ from unittest import mock
 
 from app.models import Document, RawDocument
 from app.services import ScrapyScrapperService
+from app.services import StanzaNERExtractionService
 
 
 class ScrapyScrapperServiceMysqlTest(unittest.TestCase):
@@ -54,6 +55,21 @@ It's my life!"""
 
     def tearDown(self) -> None:
         self.service.empty_db()
+
+
+class NERExtractionServiceTest(unittest.TestCase):
+    def test_extract(self):
+        text = "Barrack Obama and Donald Trump have finally agreed on Equador."
+        doc = Document(id=33, date=datetime.now(),
+                       text=text)
+        ner_tagger_service = StanzaNERExtractionService.instance()
+        results = ner_tagger_service.extract(doc)
+        self.assertEqual(5, len(results))
+        self.assertEqual("Barrack", text[results[0][0]:results[0][1]])
+        self.assertEqual("B-PERSON", results[0][2])
+
+        self.assertEqual("Obama", text[results[1][0]:results[1][1]])
+        self.assertEqual("E-PERSON", results[1][2])
 
 
 if __name__ == '__main__':

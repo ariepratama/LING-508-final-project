@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Text, List, Tuple
 
+import stanza
 from bs4 import BeautifulSoup
 
 from app.models import Document, RawDocument
@@ -85,11 +86,30 @@ class StanzaNERExtractionService(NERExtractionService):
     """ NER extraction by using Stanford's stanza model
     """
 
-    def __init__(self):
-        pass
+    INSTANCE = None
+
+    @staticmethod
+    def instance():
+        if not StanzaNERExtractionService.INSTANCE:
+            StanzaNERExtractionService.INSTANCE = StanzaNERExtractionService()
+
+        return StanzaNERExtractionService.INSTANCE
+
+    def __init__(self, lang="en"):
+        self.NLP = stanza.Pipeline(lang=lang, processors="tokenize,ner")
 
     def extract(self, doc: Document) -> List[Tuple[int, int, Text]]:
-        pass
+        parsed_doc = self.NLP(doc.text)
+        results: List[Tuple[int, int, Text]] = []
+        for sentence in parsed_doc.sentences:
+            for token in sentence.tokens:
+                if token.ner != "O":
+                    results.append((
+                        token.start_char,
+                        token.end_char,
+                        token.ner
+                    ))
+        return results
 
 
 class WebService(ABC):
