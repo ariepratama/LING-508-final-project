@@ -30,4 +30,30 @@ class RawDocument(Document):
 
     def __init__(self, date: datetime, text: Text):
         super(RawDocument, self).__init__(date, text)
-        # super(RawDocument).__init__(date, text)
+
+
+class NERSpan:
+    @staticmethod
+    def of(start_span: int, end_span: int, document_id: int, ner_tag: str):
+        ner_category = ner_tag.split("-")[-1]
+        return NERSpan(
+            start_span=start_span,
+            end_span=end_span,
+            document_id=document_id,
+            ner_tag=ner_tag,
+            ner_category=ner_category
+        )
+
+    def __init__(self, start_span: int, end_span: int, document_id: int, ner_tag: str, ner_category: str, id: int = -1):
+        self.id = id
+        self.start_span = start_span
+        self.end_span = end_span
+        self.document_id = document_id
+        self.ner_tag = ner_tag
+        self.ner_category = ner_category
+
+    def __str__(self) -> str:
+        return f"NERSpan(id={self.id}, start_span={self.start_span}, end_span={self.end_span}, document_id={self.document_id} , ner_tag={self.ner_tag})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
