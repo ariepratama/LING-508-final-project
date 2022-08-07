@@ -4,7 +4,7 @@ from datetime import datetime
 from unittest import mock
 
 from app.models import Document, RawDocument
-from app.services import ScrapyScrapperService
+from app.services import ScrapyScrapperService, process, teardown_process
 from app.services import StanzaNERExtractionService
 
 
@@ -70,6 +70,14 @@ class NERExtractionServiceTest(unittest.TestCase):
 
         self.assertEqual("Obama", text[results[1][0]:results[1][1]])
         self.assertEqual("E-PERSON", results[1][2])
+
+
+class ProcessTest(unittest.TestCase):
+    def test_process(self):
+        process(is_test=True)
+
+    def tearDown(self) -> None:
+        teardown_process()
 
 
 if __name__ == '__main__':

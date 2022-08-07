@@ -51,3 +51,9 @@ class NERSpan:
         self.document_id = document_id
         self.ner_tag = ner_tag
         self.ner_category = ner_category
+
+    def __str__(self) -> str:
+        return f"NERSpan(id={self.id}, start_span={self.start_span}, end_span={self.end_span}, document_id={self.document_id} , ner_tag={self.ner_tag})"
+
+    def __repr__(self) -> str:
+        return self.__str__()

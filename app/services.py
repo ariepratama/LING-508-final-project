@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Text, List, Tuple
@@ -5,8 +6,45 @@ from typing import Text, List, Tuple
 import stanza
 from bs4 import BeautifulSoup
 
-from app.models import Document, RawDocument
-from app.repositories import WebDocumentRepositoryImpl, SQLDocumentRepositoryImpl
+from app.models import Document, RawDocument, NERSpan
+from app.repositories import WebDocumentRepositoryImpl, SQLDocumentRepositoryImpl, SQLNERSpanRepository
+
+
+def process(is_test: bool):
+    scrapper_service = ScrapyScrapperService.instance(is_test=is_test)
+    ne_service = StanzaNERExtractionService.instance(is_test=is_test)
+
+    logging.debug("extracting document from the web....")
+    raw_docs: List[RawDocument] = scrapper_service.extract(date=datetime.now())
+
+    if is_test:
+        raw_docs = raw_docs[:2]
+
+    for raw_doc in raw_docs:
+        doc = scrapper_service.clean_html(raw_doc)
+        logging.debug(f"storing document to persistence {raw_doc}")
+        scrapper_service.store_document(doc)
+
+        logging.debug(f"extracting ner from document={raw_doc}")
+        raw_ne_spans: List[Tuple[int, int, Text]] = ne_service.extract(doc)
+        ner_spans: List[NERSpan] = [
+            NERSpan.of(start_span=start_span, end_span=end_span, document_id=doc.id, ner_tag=ner_tag)
+            for (start_span, end_span, ner_tag)
+            in raw_ne_spans
+        ]
+        logging.debug(f"storing ner_spans={ner_spans}")
+        ne_service.store(ner_spans)
+
+
+def teardown_process():
+    """ clean up the process remnants after test
+
+    :return:
+    """
+    scrapper_service = ScrapyScrapperService.instance(is_test=True)
+    ne_service = StanzaNERExtractionService.instance(is_test=True)
+    scrapper_service.empty_db()
+    ne_service.empty_db()
 
 
 class ScrapperService(ABC):
@@ -33,6 +71,14 @@ class ScrapperService(ABC):
 class ScrapyScrapperService(ScrapperService):
     """ Scraping by using scrapy library
     """
+    INSTANCE = None
+
+    @staticmethod
+    def instance(is_test=False):
+        if not ScrapyScrapperService.INSTANCE:
+            ScrapyScrapperService.INSTANCE = ScrapyScrapperService(is_test=is_test)
+
+        return ScrapyScrapperService.INSTANCE
 
     def __init__(self, is_test=False):
         self.web_document_repository = WebDocumentRepositoryImpl()
@@ -57,7 +103,8 @@ class ScrapyScrapperService(ScrapperService):
 
     def clean_html(self, raw_document: RawDocument) -> Document:
         soup = BeautifulSoup(raw_document.text, "html.parser")
-        return soup.getText()
+        raw_document.text = soup.getText()
+        return raw_document
 
     def store_document(self, document: Document) -> None:
         self.db_document_repository.store(document.date, document)
@@ -81,6 +128,10 @@ class NERExtractionService(ABC):
         """
         pass
 
+    @abstractmethod
+    def store(self, ner_spans: List[NERSpan]) -> None:
+        pass
+
 
 class StanzaNERExtractionService(NERExtractionService):
     """ NER extraction by using Stanford's stanza model
@@ -89,14 +140,29 @@ class StanzaNERExtractionService(NERExtractionService):
     INSTANCE = None
 
     @staticmethod
-    def instance():
+    def instance(lang="en", is_test=False):
         if not StanzaNERExtractionService.INSTANCE:
-            StanzaNERExtractionService.INSTANCE = StanzaNERExtractionService()
+            StanzaNERExtractionService.INSTANCE = StanzaNERExtractionService(lang=lang, is_test=is_test)
 
         return StanzaNERExtractionService.INSTANCE
 
-    def __init__(self, lang="en"):
+    def __init__(self, lang="en", is_test=False):
         self.NLP = stanza.Pipeline(lang=lang, processors="tokenize,ner")
+        if is_test:
+            self.ne_repo = SQLNERSpanRepository.instance(
+                host="",
+                database="ling_508.db",
+                engine="sqlite"
+            )
+            return
+
+        self.ne_repo = SQLNERSpanRepository.instance(
+            host="localhost",
+            database="ling_508",
+            engine="mysql+pymysql",
+            user="root",
+            password="root"
+        )
 
     def extract(self, doc: Document) -> List[Tuple[int, int, Text]]:
         parsed_doc = self.NLP(doc.text)
@@ -110,6 +176,21 @@ class StanzaNERExtractionService(NERExtractionService):
                         token.ner
                     ))
         return results
+
+    def store(self, ner_spans: List[NERSpan]) -> None:
+        """ Store all the ner_spans into persistence
+
+        :param ner_spans:
+        :return:
+        """
+        for ner_span in ner_spans:
+            self.ne_repo.store(ner_span)
+
+    def empty_db(self) -> None:
+        """ Only used at tests, empty the db after running integration tests
+        :return:
+        """
+        self.ne_repo.truncate()
 
 
 class WebService(ABC):
