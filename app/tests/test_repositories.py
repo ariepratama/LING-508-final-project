@@ -2,8 +2,8 @@ import datetime
 import unittest
 from datetime import datetime
 
-from app.models import Document
-from app.repositories import SQLDocumentRepositoryImpl, WebDocumentRepositoryImpl
+from app.models import Document, NERSpan
+from app.repositories import SQLDocumentRepositoryImpl, WebDocumentRepositoryImpl, SQLNERSpanRepository
 
 
 class WebDocumentRepositoryImplTest(unittest.TestCase):
@@ -37,6 +37,37 @@ class SQLLiteDocumentRepositoryImplTest(unittest.TestCase):
         self.assertEqual(1, len(results))
 
     def tearDown(self) -> None:
+        self.repo.truncate()
+
+
+class SQLLiteNERSpanRepositoryImplTest(unittest.TestCase):
+    doc_repo = SQLDocumentRepositoryImpl.instance(engine="sqlite", host="", database="ling_508.db")
+    repo = SQLNERSpanRepository.instance(engine="sqlite", host="", database="ling_508.db")
+
+    def test_store(self):
+        doc = Document(date=datetime.now(), text="Miley Cirus is here")
+        self.doc_repo.store(doc.date, doc)
+
+        ner_span1 = NERSpan.of(document_id=doc.id, start_span=0, end_span=4, ner_tag="B-PERSON")
+        self.repo.store(ner_span1)
+
+    def test_find_by_ner_category(self):
+        doc = Document(date=datetime.now(), text="Miley Cirus is here")
+        self.doc_repo.store(doc.date, doc)
+
+        ner_span1 = NERSpan.of(document_id=doc.id, start_span=0, end_span=4, ner_tag="B-PERSON")
+        self.repo.store(ner_span1)
+
+        ner_span2 = NERSpan.of(document_id=doc.id, start_span=5, end_span=10, ner_tag="E-PERSON")
+        self.repo.store(ner_span2)
+
+        ner_spans = self.repo.find_by_ner_category("PERSON")
+        self.assertEqual(2, len(ner_spans))
+        self.assertEqual(ner_span1.start_span, ner_spans[0].start_span)
+        self.assertEqual(ner_span2.end_span, ner_spans[1].end_span)
+
+    def tearDown(self) -> None:
+        self.doc_repo.truncate()
         self.repo.truncate()
 
 

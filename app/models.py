@@ -33,7 +33,18 @@ class RawDocument(Document):
 
 
 class NERSpan:
-    def __init__(self, id: int, start_span: int, end_span: int, document_id: int, ner_tag: str, ner_category: str):
+    @staticmethod
+    def of(start_span: int, end_span: int, document_id: int, ner_tag: str):
+        ner_category = ner_tag.split("-")[-1]
+        return NERSpan(
+            start_span=start_span,
+            end_span=end_span,
+            document_id=document_id,
+            ner_tag=ner_tag,
+            ner_category=ner_category
+        )
+
+    def __init__(self, start_span: int, end_span: int, document_id: int, ner_tag: str, ner_category: str, id: int = -1):
         self.id = id
         self.start_span = start_span
         self.end_span = end_span
