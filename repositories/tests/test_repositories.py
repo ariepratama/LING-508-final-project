@@ -2,8 +2,8 @@ import datetime
 import unittest
 from datetime import datetime
 
-from app.models import Document, NERSpan
-from app.repositories import SQLDocumentRepositoryImpl, WebDocumentRepositoryImpl, SQLNERSpanRepository
+from models.models import Document, NERSpan
+from repositories.repositories import SQLDocumentRepositoryImpl, WebDocumentRepositoryImpl, SQLNERSpanRepository
 
 
 class WebDocumentRepositoryImplTest(unittest.TestCase):

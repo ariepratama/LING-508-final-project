@@ -6,8 +6,8 @@ from typing import Text, List, Tuple
 import stanza
 from bs4 import BeautifulSoup
 
-from app.models import Document, RawDocument, NERSpan
-from app.repositories import WebDocumentRepositoryImpl, SQLDocumentRepositoryImpl, SQLNERSpanRepository
+from models.models import Document, RawDocument, NERSpan
+from repositories.repositories import WebDocumentRepositoryImpl, SQLDocumentRepositoryImpl, SQLNERSpanRepository
 
 
 def process(is_test: bool):

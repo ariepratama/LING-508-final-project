@@ -3,9 +3,9 @@ import unittest
 from datetime import datetime
 from unittest import mock
 
-from app.models import Document, RawDocument
-from app.services import ScrapyScrapperService, process, teardown_process
-from app.services import StanzaNERExtractionService
+from models.models import Document, RawDocument
+from services.services import ScrapyScrapperService, process, teardown_process
+from services.services import StanzaNERExtractionService
 
 
 class ScrapyScrapperServiceMysqlTest(unittest.TestCase):

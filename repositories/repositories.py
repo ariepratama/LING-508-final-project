@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 from typing import List
 
 from datasets import load_dataset
-from sqlalchemy import MetaData, Table, Column, Integer, DateTime, Text, ForeignKey, String
+from sqlalchemy import MetaData, Table, Column, Integer, DateTime, Text, String
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Document, RawDocument, NERSpan
+from models.models import Document, RawDocument, NERSpan
 
 
 class DocumentRepository(ABC):
