@@ -194,14 +194,59 @@ class StanzaNERExtractionService(NERExtractionService):
 
 
 class WebService(ABC):
+
     @abstractmethod
-    def retrieve_related_documents(self, search_term: Text) -> List[Document]:
+    def retrieve_related_ner_categories(self, search_term: str) -> List[str]:
+        pass
+
+    @abstractmethod
+    def retrieve_related_documents(self, search_term: str) -> List[Document]:
         pass
 
 
 class WebServiceImpl(WebService):
-    def __init__(self):
-        pass
+    INSTANCE = None
+
+    @staticmethod
+    def instance(is_test=False):
+        if not WebServiceImpl.INSTANCE:
+            WebServiceImpl.INSTANCE = WebServiceImpl(is_test=is_test)
+
+        return WebServiceImpl.INSTANCE
+
+    def __init__(self, is_test=False):
+        if is_test:
+            self.db_document_repository = SQLDocumentRepositoryImpl.instance(
+                host="",
+                database="ling_508.db",
+                engine="sqlite"
+            )
+            self.ner_repository = SQLNERSpanRepository.instance(
+                host="",
+                database="ling_508.db",
+                engine="sqlite"
+            )
+            return
+
+        self.db_document_repository = SQLDocumentRepositoryImpl.instance(
+            host="localhost",
+            database="ling_508",
+            engine="mysql+pymysql",
+            user="root",
+            password="root"
+        )
+        self.ner_repository = SQLNERSpanRepository.instance(
+            host="localhost",
+            database="ling_508",
+            engine="mysql+pymysql",
+            user="root",
+            password="root"
+        )
+
+    def retrieve_related_ner_categories(self, search_term: str) -> List[str]:
+        return self.ner_repository.find_related_ner_categories(search_term)
 
     def retrieve_related_documents(self, search_term: Text) -> List[Document]:
-        return []
+        doc_ids = self.ner_repository.find_document_ids_by_ner_category(search_term)
+        docs = self.db_document_repository.find_by_ids(doc_ids)
+        return docs

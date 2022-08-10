@@ -40,7 +40,7 @@ It's my life!"""
         cleaned_text = self.service.clean_html(raw_document)
         self.assertTrue(expected_text, cleaned_text)
 
-    @mock.patch("app.tests.test_services.ScrapyScrapperServiceTest.service.db_document_repository")
+    @mock.patch("services.tests.test_services.ScrapyScrapperServiceTest.service.db_document_repository")
     def test_store_document(self, mock_repository):
         """ test store documents into mocked db
 
@@ -78,6 +78,7 @@ class ProcessTest(unittest.TestCase):
 
     def tearDown(self) -> None:
         teardown_process()
+        pass
 
 
 if __name__ == '__main__':
