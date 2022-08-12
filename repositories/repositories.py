@@ -20,6 +20,10 @@ class DocumentRepository(ABC):
     def store(self, date: datetime, doc: Document) -> None:
         pass
 
+    @abstractmethod
+    def find_by_ids(self, ids: List[int]) -> List[Document]:
+        pass
+
 
 class SQLRepository(ABC):
 
@@ -65,6 +69,9 @@ class WebDocumentRepositoryImpl(DocumentRepository):
 
     def store(self, date: datetime, doc: Document) -> None:
         raise Exception("Cannot do store using WebDocumentRepositoryImpl")
+
+    def find_by_ids(self, ids: List[int]) -> List[Document]:
+        raise Exception("Cannot do find_by_ids using WebDocumentRepositoryImpl")
 
 
 class SQLDocumentRepositoryImpl(DocumentRepository, SQLRepository):
@@ -139,6 +146,16 @@ class SQLDocumentRepositoryImpl(DocumentRepository, SQLRepository):
             transaction.rollback()
             logging.warning(f"failed to execute transaction, rolling back {ie}")
 
+    def find_by_ids(self, ids: List[int]) -> List[Document]:
+        query = self.documents.select().where(
+            self.documents.c.id.in_(ids)
+        )
+        results = self.db_conn.execute(query).fetchall()
+        results = [
+            Document(**row) for row in results
+        ]
+        return results
+
     def truncate(self) -> None:
         """ delete all data in the db without deleting the table, use this only for testing purpose
 
@@ -160,7 +177,15 @@ class NERSpanRepository(ABC):
         pass
 
     @abstractmethod
+    def find_related_ner_categories(self, query: str) -> List[str]:
+        pass
+
+    @abstractmethod
     def store(self, ner_span: NERSpan) -> None:
+        pass
+
+    @abstractmethod
+    def find_document_ids_by_ner_category(self, ner_category: str) -> List[int]:
         pass
 
 
@@ -214,6 +239,16 @@ class SQLNERSpanRepository(NERSpanRepository, SQLRepository):
 
         return results
 
+    def find_related_ner_categories(self, query: str, limit=200) -> List[str]:
+        query = self.document_named_entities.select().where(
+            self.document_named_entities.c.ner_category.ilike(f"%{query}%")
+        ).limit(limit)
+        results = self.db_conn.execute(query).fetchall()
+        results = set([row[-1] for row in results])
+        results = sorted(list(results))
+
+        return results
+
     def store(self, ner_span: NERSpan) -> None:
         transaction = self.db_conn.begin()
 
@@ -243,6 +278,17 @@ class SQLNERSpanRepository(NERSpanRepository, SQLRepository):
             NERSpan(**row)
             for row in results
         ]
+
+        return results
+
+    def find_document_ids_by_ner_category(self, ner_category: str) -> List[int]:
+        query = self.document_named_entities.select()
+        results = self.db_conn.execute(query).fetchall()
+        results = [
+            NERSpan(**row)
+            for row in results
+        ]
+        results = list(set([ner_span.document_id for ner_span in results]))
 
         return results
 
