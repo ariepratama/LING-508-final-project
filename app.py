@@ -1,8 +1,11 @@
+import flask
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 
 from services.services import WebServiceImpl
 
 app = Flask(__name__)
+cors = CORS(app, resources={r"*": {"origins": "*"}})
 
 web_service = WebServiceImpl.instance()
 
@@ -33,19 +36,28 @@ def get_related_ner_category():
     """
     search_term = request.args.get("query")
     related_ner_categories = web_service.retrieve_related_ner_categories(search_term=search_term)
-    return jsonify(dict(data=related_ner_categories))
+    response = jsonify(dict(data=related_ner_categories))
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 
-@app.route("/documents/search", methods=["POST"])
+@app.route("/documents/search", methods=["POST", "OPTIONS"])
+@cross_origin(origin='*')
 def get_related_document_by_ner_category():
+    if request.method == "OPTIONS":
+        response = flask.Response()
+        return response
+
     request_payload = request.get_json()
     ner_category = request_payload.get("ner_category")
 
     if len(ner_category) == 0:
-        return jsonify(dict(data=[]))
+        response = jsonify(dict(data=[]))
+        return response
 
     related_documents = web_service.retrieve_related_documents(ner_category)
-    return jsonify(dict(data=[{"id": doc.id, "text": doc.text} for doc in related_documents]))
+    response = jsonify(dict(data=[{"id": doc.id, "text": doc.text} for doc in related_documents]))
+    return response
 
 
 if __name__ == "__main__":
