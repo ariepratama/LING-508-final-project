@@ -33,6 +33,11 @@ class RawDocument(Document):
 
 
 class NERSpan:
+    """ Named entity span in a document. It describes which token, denoted by start_span and end_span, will be tagged.
+    ner_tag is the full tag of a token, if it is using BIO/IOB format: B-PERSON, ner_category is the actual named entity
+    tag, without any prefixes, for example PERSON
+    """
+
     @staticmethod
     def of(start_span: int, end_span: int, document_id: int, ner_tag: str):
         ner_category = ner_tag.split("-")[-1]
